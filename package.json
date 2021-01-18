@@ -1,0 +1,31 @@
+{
+  "name": "polkadot-csv-exporter",
+  "version": "1.0.0",
+  "description": "Polkadot CSV exporter",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Colm3na/polkadot-csv-exporter.git"
+  },
+  "keywords": [
+    "blockchain",
+    "kusama",
+    "polkadot",
+    "substrate",
+    "PoS",
+    "validator"
+  ],
+  "author": "Mario Pino Uceda",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Colm3na/polkadot-csv-exporter/issues"
+  },
+  "homepage": "https://github.com/Colm3na/polkadot-csv-exporter#readme",
+  "dependencies": {
+    "@polkadot/api": "^3.4.1",
+    "yargs": "^16.2.0"
+  }
+}
