@@ -1,8 +1,9 @@
 module.exports = {
+  exportDir: './csv_export',
   chains: [
     {
       name: 'kusama',
-      wsEndPoint: 'wss://kusama-rpc.polkadot.io',
+      wsEndPoint: 'wss://cc3-3.kusama.network',
       denom: 'KSM',
       decimalPlaces: 12,
     },
