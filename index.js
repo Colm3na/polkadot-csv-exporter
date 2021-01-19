@@ -47,7 +47,6 @@ async function main () {
   console.log(`Fetching era history ...`);
   const withActive = false;
   const erasHistoric = await api.derive.staking.erasHistoric(withActive);
-  console.log(`Era history:`, erasHistoric.map(era => era.toString()).join(', '));
   const eraIndexes = erasHistoric.slice(
     Math.max(erasHistoric.length - historySize, 0)
   )
@@ -56,57 +55,38 @@ async function main () {
   const sessionIndex = 0;
   const blockNumber = 0;
   for(const eraIndex of eraIndexes) {
-    const { myValidatorStaking } = await gatherData(api, eraIndex);
-    await writeValidatorEraCSV(network, eraIndex, sessionIndex, blockNumber, myValidatorStaking);
+    const myValidatorStaking = await getEraValidatorStaking(api, eraIndex);
+    // await writeValidatorEraCSV(network, eraIndex, sessionIndex, blockNumber, myValidatorStaking);
   }
 }
 
 main().catch(console.error).finally(() => process.exit());
 
-async function getNominatorStaking(api) {
-  const nominators = await api.query.staking.nominators.entries();
-  const nominatorAddresses = nominators.map(([address]) => address.toHuman()[0]);
-  return api.derive.staking.accounts(nominatorAddresses);
-}
+async function getEraValidatorStaking(api, eraIndex) {
+  // const eraPoints = await api.derive.staking.erasPoints(eraIndex);
+  const eraExposure = await api.derive.staking.erasExposure(eraIndex);
+  console.log('eraExposure:', JSON.stringify(eraExposure.validators, null, 2));
 
-async function getMyValidatorStaking(api, nominatorsStakings, eraIndex) {
-  const eraPoints = await api.query.staking.erasRewardPoints(eraIndex);
-  const validatorsAddresses = await api.query.session.validators();
-  const validatorsStakings = await api.derive.staking.accounts(validatorsAddresses)
-  const myValidatorStaking = Promise.all ( validatorsStakings.map( async validatorStaking => {
-    const validatorAddress = validatorStaking.accountId
-    const { identity } = await api.derive.accounts.info(validatorAddress);
-    const validatorEraPoints = eraPoints.toJSON()['individual'][validatorAddress.toHuman()] ? eraPoints.toJSON()['individual'][validatorAddress.toHuman()] : 0
-    let voters = 0;
-    for (const staking of nominatorsStakings) {
-      if (staking.nominators.includes(validatorAddress)) {
-        voters++
-      }
-    }
-    return {
-      ...validatorStaking,
-      displayName: getDisplayName(identity),
-      voters: voters,
-      eraPoints: validatorEraPoints,
-    }
-  }))
-  return myValidatorStaking
-}
+  // const eraPrefs = await api.derive.staking.erasPrefs(eraIndex);
+  // const eraRewards = await api.derive.staking.erasRewards(eraIndex);
+  // const eraSlashes = await api.derive.staking.erasSlashes(eraIndex);
 
-async function gatherData(api, eraIndex){
-  console.log(`Fetching era ${eraIndex} data ...`);
-  const eraPoints = await api.query.staking.erasRewardPoints(eraIndex);
-  console.log(`Fetching nominator staking info for era ${eraIndex} ...`);
-  const nominatorStaking = await getNominatorStaking(api);
-  // console.log(JSON.stringify(nominatorStaking, null, 2));
-  console.log(`Fetching validator staking info for era ${eraIndex} ...`);
-  const myValidatorStaking = await getMyValidatorStaking(api, nominatorStaking, eraIndex);
-  // console.log(JSON.stringify(myValidatorStaking, null, 2));
-  return {
-    eraPoints,
-    nominatorStaking,
-    myValidatorStaking
-  }
+  // const eraValidatorAddresses = eraPoints.toJSON()['individual'];
+
+
+  // const getEraValidatorStaking = Promise.all(eraValidatorAddresses.map( async validatorAddress => {
+  //   const { identity } = await api.derive.accounts.info(validatorAddress);
+  //   const validatorEraPoints = eraPoints.toJSON()['individual'][validatorAddress.toHuman()] ? eraPoints.toJSON()['individual'][validatorAddress.toHuman()] : 0
+    
+  //   const validatorExposure = eraPoints.toJSON()['individual'][validatorAddress.toHuman()] ? eraPoints.toJSON()['individual'][validatorAddress.toHuman()] : 0
+
+  //   return {
+  //     ...validatorStaking,
+  //     displayName: getDisplayName(identity),
+  //     eraPoints: validatorEraPoints,
+  //   }
+  // }))
+  // return myValidatorStaking
 }
 
 async function writeValidatorEraCSV(network, eraIndex, sessionIndex, blockNumber, myValidatorStaking) {
