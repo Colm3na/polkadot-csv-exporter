@@ -16,7 +16,7 @@ Columns:
 - Number of stakers
 - Era points
 
-Exported CSV files (one file per era) will be stored on `csv_export` folder, chain and era index are inserted in each filename.
+Exported CSV files (one file per era) will be stored in `csv_export` folder, chain and era index are inserted in each filename.
 
 NOTE: Requires Node.js, tested with v14.
 
