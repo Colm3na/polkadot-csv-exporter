@@ -2,7 +2,7 @@
 
 Export CSV files with stakig info for the selected number of (previous) eras.
 
-Currently supported chains are `kusama` and `polkadot`.
+Currently supported chains are `kusama` and `polkadot`. You can (hopefully) add more Substrate based networks that implement staking and identity pallets, just add it to `config.js` file and test it.
 
 Columns:
 
