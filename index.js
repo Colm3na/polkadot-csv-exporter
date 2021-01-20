@@ -107,7 +107,7 @@ async function getEraStakingInfo(api, eraPoints, eraPreferences, eraSlashes, era
 }
 
 async function writeValidatorEraCSV(network, eraIndex, eraStakingInfo) {
-  console.log(`Writing validators CSV for era ${eraIndex} ...`)
+  console.log(`Writing validators CSV file for era ${eraIndex} ...`)
   const filePath = `${exportDir}/${network}_validators_era_${eraIndex}.csv`;
   let file = fs.createWriteStream(filePath);
   file.on('error', function(err) { console.log(err) });
@@ -118,7 +118,7 @@ async function writeValidatorEraCSV(network, eraIndex, eraStakingInfo) {
   return new Promise(resolve => {
     file.on("close", resolve);
     file.close();
-    console.log(`Finished writing validators CSV for era ${eraIndex}`);
+    console.log(`Finished!`);
   });
 }
 
