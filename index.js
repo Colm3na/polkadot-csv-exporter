@@ -84,7 +84,7 @@ async function main () {
 main().catch(console.error).finally(() => process.exit());
 
 async function getEraStakingInfo(api, eraPoints, eraPreferences, eraSlashes, eraExposures) {
-  const eraValidatorAddresses = Object.keys(eraPoints['validators']);
+  const eraValidatorAddresses = Object.keys(eraExposures['validators']);
   // console.log(`eraValidatorAddresses:`, JSON.stringify(eraValidatorAddresses));
   return Promise.all(eraValidatorAddresses.map(async validatorAddress => {
     // We need to get controller address and identity from current blockchain state, this may be inaccurate
