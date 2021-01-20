@@ -87,7 +87,7 @@ async function getEraStakingInfo(api, eraPoints, eraPreferences, eraSlashes, era
   const eraValidatorAddresses = Object.keys(eraPoints['validators']);
   // console.log(`eraValidatorAddresses:`, JSON.stringify(eraValidatorAddresses));
   return Promise.all(eraValidatorAddresses.map(async validatorAddress => {
-    // We need to get controller address from current staking info, this may be inaccurate
+    // We need to get controller address and identity from current blockchain state, this may be inaccurate
     const staking = await api.derive.staking.account(validatorAddress);
     const { identity } = await api.derive.accounts.info(validatorAddress);
     const validatorEraPoints = eraPoints['validators'][validatorAddress] ? eraPoints['validators'][validatorAddress] : 0;
