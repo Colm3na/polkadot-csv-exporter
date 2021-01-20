@@ -44,7 +44,6 @@ async function main () {
     api.rpc.system.version()
   ]);
   console.log(`Connected to chain ${chain} using ${wsEndPoint} (${nodeName} v${nodeVersion})`);
-  console.log(`Fetching era history ...`);
   const withActive = false;
   const erasHistoric = await api.derive.staking.erasHistoric(withActive);
   const eraIndexes = erasHistoric.slice(
@@ -52,51 +51,69 @@ async function main () {
   )
   console.log(`Requested eras:`, eraIndexes.map(era => era.toString()).join(', '));
   console.log(`Gathering data ...`);
-  const sessionIndex = 0;
-  const blockNumber = 0;
+
+  const [
+    erasPoints,
+    erasPreferences,
+    erasSlashes,
+    erasExposures,
+  ] = await Promise.all([
+    api.derive.staking._erasPoints(eraIndexes),
+    api.derive.staking._erasPrefs(eraIndexes),
+    api.derive.staking._erasSlashes(eraIndexes),
+    api.derive.staking._erasExposure(eraIndexes),
+  ]);
+
   for(const eraIndex of eraIndexes) {
-    const myValidatorStaking = await getEraValidatorStaking(api, eraIndex);
-    // await writeValidatorEraCSV(network, eraIndex, sessionIndex, blockNumber, myValidatorStaking);
+    const eraStakingInfo = await getEraStakingInfo(
+      api,
+      erasPoints.find(({ era }) => era.eq(eraIndex)),
+      erasPreferences.find(({ era }) => era.eq(eraIndex)),
+      erasSlashes.find(({ era }) => era.eq(eraIndex)),
+      erasExposures.find(({ era }) => era.eq(eraIndex)),
+    );
+    // console.log(`eraStakingInfo:`, JSON.stringify(eraStakingInfo, null, 2));
+    await writeValidatorEraCSV(
+      network,
+      eraIndex,
+      eraStakingInfo
+    );
   }
 }
 
 main().catch(console.error).finally(() => process.exit());
 
-async function getEraValidatorStaking(api, eraIndex) {
-  // const eraPoints = await api.derive.staking.erasPoints(eraIndex);
-  const eraExposure = await api.derive.staking.erasExposure(eraIndex);
-  console.log('eraExposure:', JSON.stringify(eraExposure.validators, null, 2));
-
-  // const eraPrefs = await api.derive.staking.erasPrefs(eraIndex);
-  // const eraRewards = await api.derive.staking.erasRewards(eraIndex);
-  // const eraSlashes = await api.derive.staking.erasSlashes(eraIndex);
-
-  // const eraValidatorAddresses = eraPoints.toJSON()['individual'];
-
-
-  // const getEraValidatorStaking = Promise.all(eraValidatorAddresses.map( async validatorAddress => {
-  //   const { identity } = await api.derive.accounts.info(validatorAddress);
-  //   const validatorEraPoints = eraPoints.toJSON()['individual'][validatorAddress.toHuman()] ? eraPoints.toJSON()['individual'][validatorAddress.toHuman()] : 0
-    
-  //   const validatorExposure = eraPoints.toJSON()['individual'][validatorAddress.toHuman()] ? eraPoints.toJSON()['individual'][validatorAddress.toHuman()] : 0
-
-  //   return {
-  //     ...validatorStaking,
-  //     displayName: getDisplayName(identity),
-  //     eraPoints: validatorEraPoints,
-  //   }
-  // }))
-  // return myValidatorStaking
+async function getEraStakingInfo(api, eraPoints, eraPreferences, eraSlashes, eraExposures) {
+  const eraValidatorAddresses = Object.keys(eraPoints['validators']);
+  // console.log(`eraValidatorAddresses:`, JSON.stringify(eraValidatorAddresses));
+  return Promise.all(eraValidatorAddresses.map(async validatorAddress => {
+    // We need to get controller address from current staking info, this may be inaccurate
+    const staking = await api.derive.staking.account(validatorAddress);
+    const { identity } = await api.derive.accounts.info(validatorAddress);
+    const validatorEraPoints = eraPoints['validators'][validatorAddress] ? eraPoints['validators'][validatorAddress] : 0;
+    const validatorExposure = eraExposures['validators'][validatorAddress] ? eraExposures['validators'][validatorAddress] : 0;
+    const { commission } = eraPreferences['validators'][validatorAddress] ? eraPreferences['validators'][validatorAddress] : 0;
+    const validatorSlashes = eraSlashes['validators'][validatorAddress] ? eraSlashes['validators'][validatorAddress] : [];
+    return {
+      accountId: validatorAddress,
+      controllerId: staking.controllerId,
+      displayName: getDisplayName(identity),
+      eraPoints: validatorEraPoints,
+      exposure: validatorExposure,
+      commission,
+      slashes: validatorSlashes,
+    }
+  }))
 }
 
-async function writeValidatorEraCSV(network, eraIndex, sessionIndex, blockNumber, myValidatorStaking) {
+async function writeValidatorEraCSV(network, eraIndex, eraStakingInfo) {
   console.log(`Writing validators CSV for era ${eraIndex} ...`)
   const filePath = `${exportDir}/${network}_validators_era_${eraIndex}.csv`;
   let file = fs.createWriteStream(filePath);
   file.on('error', function(err) { console.log(err) });
-  file.write(`era,session,block_number,name,stash_address,controller_address,commission_percent,self_stake,total_stake,num_stakers,voters,era_points\n`);
-  for (const staking of myValidatorStaking) {
-    file.write(`${eraIndex},${sessionIndex},${blockNumber},${staking.displayName},${staking.accountId},${staking.controllerId},${(parseInt(staking.validatorPrefs.commission.toString()) / 10000000).toFixed(2)},${staking.exposure.own},${staking.exposure.total},${staking.exposure.others.length},${staking.voters},${staking.eraPoints}\n`);
+  file.write(`era,name,stash_address,controller_address,commission_percent,self_stake,total_stake,num_stakers,era_points\n`);
+  for (const staking of eraStakingInfo) {
+    file.write(`${eraIndex},${staking.displayName},${staking.accountId},${staking.controllerId},${(parseInt(staking.commission.toString()) / 10000000).toFixed(2)},${staking.exposure.own},${staking.exposure.total},${staking.exposure.others.length},${staking.eraPoints}\n`);
   }
   return new Promise(resolve => {
     file.on("close", resolve);
