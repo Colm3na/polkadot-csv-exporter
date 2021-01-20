@@ -4,6 +4,20 @@ Export CSV files with stakig info for the selected number of (previous) eras.
 
 Currently supported chains are `kusama` and `polkadot`.
 
+Columns:
+
+- Era index
+- Name
+- Stash address
+- Controller address
+- Commission percentage
+- Self stake
+- Total stake
+- Number of stakers
+- Era points
+
+Exported CSV files (one file per era) will be stored on `csv_export` folder, chain and era index are inserted in each filename.
+
 NOTE: Requires Node.js, tested with v14.
 
 
